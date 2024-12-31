@@ -1,0 +1,4 @@
+---
+active_interface: "{{ ansible_default_ipv4.interface }}"
+active_interface_mac: "{{ ansible_default_ipv4.macaddress }}"
+netplan_config_file: "/etc/netplan/01-netcfg.yaml"

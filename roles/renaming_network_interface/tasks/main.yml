@@ -1,0 +1,29 @@
+# Renaming the active network interface to "net0"
+# new_interface_name variable specified in the inventory.yml
+---
+- name: Display current active network interface
+  debug:
+    msg: "Current active network interface name: {{ active_interface }}"
+
+- name: Cleanup old netplan configurayion
+  shell: for i in `ls -1 /etc/netplan/*.yaml`; do mv $i $i.bak; done
+
+- name: Generate new Netplan configuration
+  template:
+    src: netplan_config.yaml.j2
+    dest: "{{ netplan_config_file }}"
+    owner: root
+    group: root
+    mode: 0600
+
+- name: Apply new netplan configuration
+  command: netplan apply
+
+- name: Display information about the renamed interface
+  command: ip -o link show net0
+  register: renamed_interface_info
+  changed_when: false
+
+- name: Display renamed interface information
+  debug:
+    msg: "Renamed interface information: {{ renamed_interface_info.stdout }}"

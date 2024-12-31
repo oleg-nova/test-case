@@ -1,0 +1,59 @@
+# Encrypting the second disk in the system (disk without root partition). 
+# Partition name specified in the inventory.yml
+---
+- name: Ensure cryptsetup is installed
+  apt:
+    name: cryptsetup
+    state: present
+
+- name: Check if the partition exists
+  stat:
+    path: "{{ disk_to_encrypt_name }}"
+  register: partition_stat
+
+- name: Fail if the partition does not exist
+  fail:
+    msg: "The specified partition {{ disk_to_encrypt_name }} does not exist."
+  when: not partition_stat.stat.exists
+
+- name: Create LUKS keyfile
+  command: dd if=/dev/urandom of=/etc/luks_keyfile bs=512 count=4
+  register: keyfile_creation
+  changed_when: keyfile_creation.rc == 0
+  failed_when: keyfile_creation.rc != 0
+
+
+- name: Encrypt the partition
+  command: cryptsetup luksFormat {{ disk_to_encrypt_name }} --batch-mode --key-file /etc/luks_keyfile
+  when: partition_stat.stat.exists
+  register: encrypt_result
+  changed_when: encrypt_result.rc == 0
+  failed_when: encrypt_result.rc != 0
+
+- name: Check if encryption was successful
+  debug:
+    msg: "Partition {{ disk_to_encrypt_name }} encrypted successfully."
+  when: encrypt_result.changed
+
+- name: Open the encrypted partition
+  command: cryptsetup luksOpen {{ disk_to_encrypt_name }} encrypted_disk --key-file /etc/luks_keyfile
+  when: encrypt_result.changed
+  register: open_result
+  changed_when: open_result.rc == 0
+  failed_when: open_result.rc != 0
+
+- name: Check if opening the encrypted partition was successful
+  debug:
+    msg: "Encrypted partition {{ disk_to_encrypt_name }} opened successfully."
+  when: open_result.changed
+
+- name: Create filesystem on the encrypted partition
+  filesystem:
+    fstype: ext4
+    dev: /dev/mapper/encrypted_disk
+  register: fs_result
+
+- name: Check if filesystem creation was successful
+  debug:
+    msg: "Filesystem created successfully on /dev/mapper/encrypted_disk."
+  when: fs_result.changed
