@@ -1,0 +1,69 @@
+# Switching CPU operation from power-saving mode to more productive mode
+---
+- name: Ensure cpupower is installed
+  ansible.builtin.apt:
+    name: linux-tools-generic
+    state: present
+    update_cache: true
+
+- name: Check available governors
+  ansible.builtin.shell:
+    cmd: >-
+      set -o pipefail
+      {{ cpupower_bin }} frequency-info -g
+      | grep 'governors: '
+      | sed 's/  available cpufreq governors://g'
+    # Don't run it if cpupower is not installed yet
+    removes: "{{ cpupower_bin }}"
+  register: _cpupower_governors
+  check_mode: false
+  changed_when: false
+
+# Note! You can't control CPU P-state on some EC2 types. See https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/processor_state_control.html
+# This feature mostly for bare-metal servers
+- name: Selected governor is supported?
+  when:
+    - "not('skipped, ' in _cpupower_governors.stdout)"
+  ansible.builtin.assert:
+    that:
+      - "(' ' + cpu_performance_mode) in _cpupower_governors.stdout"
+    fail_msg: >-
+      Selected governor '{{ cpu_performance_mode }}' is not supported.
+      {{ _cpupower_governors.stdout }}
+
+- name: Install start-up script
+  become: true
+  ansible.builtin.template:
+    dest: "{{ cpupower_startup_script_filename }}"
+    src: cpupower_apply.sh.j2
+    owner: root
+    group: root
+    mode: '0755'
+    backup: true
+  notify:
+    - cpupower-restart-service
+
+- name: Install systemd service
+  become: true
+  ansible.builtin.template:
+    dest: "/etc/systemd/system/cpupower.service"
+    src: cpupower.service.j2
+    owner: root
+    group: root
+    mode: '0644'
+    backup: true
+  register: _cpupower_service_config
+  notify:
+    - systemd-daemon-reload
+    - cpupower-restart-service
+
+- name: Get CPU mode
+  ansible.builtin.command: cpupower frequency-info -g
+  register: cpu_mode
+  changed_when: false
+  ignore_errors: true
+
+- name: Print CPU mode information
+  ansible.builtin.debug:
+    msg: "{{ cpu_mode.stdout }}"
+  when: cpu_mode is defined

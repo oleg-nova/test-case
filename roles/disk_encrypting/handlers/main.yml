@@ -1,0 +1,15 @@
+---
+- name: Check if encryption was successful
+  ansible.builtin.debug:
+    msg: "Partition {{ disk_to_encrypt_name }} encrypted successfully."
+#  when: encrypt_result.changed
+
+- name: Check if opening the encrypted partition was successful
+  ansible.builtin.debug:
+    msg: "Encrypted partition {{ disk_to_encrypt_name }} opened successfully."
+#  when: open_result.changed
+
+- name: Check if filesystem creation was successful
+  ansible.builtin.debug:
+    msg: "Filesystem created successfully on /dev/mapper/{{ open_result.name }}"
+#  when: fs_result.changed

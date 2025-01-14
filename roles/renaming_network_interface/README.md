@@ -2,7 +2,7 @@
 
 Renaming the active network interface to "net0".
 
-This role performs the following actions:
+This role uses [mrlesmithjr.netplan](https://github.com/mrlesmithjr/ansible-netplan) Ansible module and performs the following actions:
 1. Identifies the active network interface.
 1. Creates an netplan rule to rename the interface.
 1. Apply changs 

@@ -2,28 +2,56 @@
 # new_interface_name variable specified in the inventory.yml
 ---
 - name: Display current active network interface
-  debug:
+  ansible.builtin.debug:
     msg: "Current active network interface name: {{ active_interface }}"
 
-- name: Cleanup old netplan configurayion
-  shell: for i in `ls -1 /etc/netplan/*.yaml`; do mv $i $i.bak; done
+- name: Disable cloud-init network config
+  ansible.builtin.copy:
+    dest: "/etc/cloud/cloud.cfg.d/99-disable-network-config.cfg"
+    content: |
+      network: {config: disabled}
+    mode: '0644'
 
-- name: Generate new Netplan configuration
-  template:
-    src: netplan_config.yaml.j2
-    dest: "{{ netplan_config_file }}"
-    owner: root
-    group: root
-    mode: 0600
-
-- name: Apply new netplan configuration
-  command: netplan apply
+- name: Renaming the active network interface using netplan
+  ansible.builtin.import_role:
+    name: mrlesmithjr.netplan
+      # vars:
+      #   new_interface_name: "{{ hostvars[inventory_hostname]['new_interface_name'] }}"
+      #   active_interface: "{{ ansible_default_ipv4.interface }}"
+      #   active_interface_mac: "{{ ansible_default_ipv4.macaddress }}"
+  vars:
+    # Sorry, hardcoded. Can't parametrize "netplan_config_file".
+    # See https://github.com/mrlesmithjr/ansible-netplan/blob/master/templates/etc/netplan/config.yaml.j2
+    netplan_config_file: /etc/netplan/01-netcfg.yaml # defaults file for ansible-netplan.
+    netplan_config_file_mode: '0600' # File permissions for netplan config file.
+    netplan_enabled: true
+    netplan_backup_existing: true # Backup Existing Configurations
+    netplan_remove_existing: true # Removing Existing Configurations
+    netplan_check_install: true
+    netplan_renderer: networkd
+    # Using JSON :(. See https://github.com/mrlesmithjr/ansible-netplan/issues/17#issuecomment-707143634
+    netplan_configuration: '{
+      "network": {
+        "version": 2,
+        "ethernets": {
+          "{{ new_interface_name }}": {
+            "match": {
+              "macaddress": "{{ active_interface_mac }}"
+            },
+          "dhcp4": true,
+          "dhcp6": false,
+          "set-name": "{{ new_interface_name }}"
+          }
+        }
+      }
+    }'
+    netplan_apply: true # Apply new netplan configuration
 
 - name: Display information about the renamed interface
-  command: ip -o link show net0
+  ansible.builtin.command: ip -o link show {{ new_interface_name }}
   register: renamed_interface_info
   changed_when: false
 
 - name: Display renamed interface information
-  debug:
+  ansible.builtin.debug:
     msg: "Renamed interface information: {{ renamed_interface_info.stdout }}"

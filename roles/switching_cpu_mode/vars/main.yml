@@ -1,0 +1,3 @@
+---
+cpupower_bin: "/usr/bin/cpupower"
+cpupower_startup_script_filename: "/usr/local/sbin/cpupower_apply.sh"

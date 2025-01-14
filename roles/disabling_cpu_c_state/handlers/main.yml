@@ -1,11 +1,11 @@
 ---
 - name: C-states status chek
-  command: cpupower idle-info
+  ansible.builtin.command: cpupower idle-info
   register: c_states_status
   changed_when: false
   listen: C-states status chek
 
 - name: Dispay C-states status
-  debug:
+  ansible.builtin.debug:
     var: c_states_status.stdout_lines
   listen: C-states status chek

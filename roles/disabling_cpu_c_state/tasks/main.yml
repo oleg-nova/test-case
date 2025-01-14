@@ -1,12 +1,12 @@
 # Disable C-state for all CPUs
 ---
 - name: Verify that /dev/cpu_dma_latency exists
-  stat:
+  ansible.builtin.stat:
     path: /dev/cpu_dma_latency
   register: cpu_dma_latency_file
 
 - name: Disable C-states globaly
-  shell: |
+  ansible.builtin.shell: |
     exec 3>/dev/cpu_dma_latency
     echo 0 >&3
   when: cpu_dma_latency_file.stat.exists
@@ -16,7 +16,7 @@
   notify: C-states status chek
 
 - name: Disable C-states for every CPUs
-  shell: |
+  ansible.builtin.shell: |
     echo "n/a" > /sys/devices/system/cpu/cpu{{ item }}/power/pm_qos_resume_latency_us
   loop: "{{ range(0, ansible_processor_vcpus) | list }}"
   register: disable_c_states_per_cpu
@@ -25,13 +25,13 @@
   notify: C-states status chek
 
 - name: Ensure cpupower is installed
-  apt:
+  ansible.builtin.apt:
     name: linux-tools-generic
     state: present
-    update_cache: yes
+    update_cache: true
 
 - name: Disable C-states with cpupower
-  command: cpupower idle-set -D 0
+  ansible.builtin.command: cpupower idle-set -D 0
   register: cpupower_disable
   changed_when: cpupower_disable.rc == 0
   failed_when: cpupower_disable.rc != 0

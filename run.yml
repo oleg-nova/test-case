@@ -1,7 +1,8 @@
 ---
-- hosts: testcase
-  become: yes
-  gather_facts: yes
+- name: Testcase playbook
+  hosts: testcase
+  become: true
+  gather_facts: true
   roles:
     # Encrypting the second disk in the system
     - role: disk_encrypting
@@ -11,6 +12,13 @@
     # Disabling C-state for all available CPUs
     - role: disabling_cpu_c_state
       tags: disabling_cpu_c_state_role
+    # Switching CPU operation from power-saving mode to more productive mode
+    # Note! You can't control CPU P-state on some EC2 types. See https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/processor_state_control.html
+    # This feature mostly for bare-metal servers
+    - role: switching_cpu_mode
+      vars:
+        cpupower_governor: "{{ hostvars[inventory_hostname]['cpu_performance_mode'] }}"
+      tags: switching_cpu_mode_role
     # Renaming the active network interface to "net0"
     - role: renaming_network_interface
       vars:

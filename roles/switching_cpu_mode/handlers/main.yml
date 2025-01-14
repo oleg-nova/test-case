@@ -1,0 +1,18 @@
+---
+- name: Reload systemd daemon
+  listen: systemd-daemon-reload
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Enable and restart cpupower service
+  listen: cpupower-restart-service
+  ansible.builtin.service:
+    name: cpupower.service
+    enabled: true
+    state: restarted
+  register: cpupower_service_enable
+  failed_when: >-
+    not (ansible_check_mode
+    and _cpupower_service_config.changed
+    and _cpupower_service_config.diff[0].before == '')
+    and cpupower_service_enable.failed

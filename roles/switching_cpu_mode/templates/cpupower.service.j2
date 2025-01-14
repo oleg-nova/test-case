@@ -1,0 +1,13 @@
+# {{ ansible_managed }}
+
+[Unit]
+Description=CPU power-saving settings
+
+[Service]
+ExecStart={{ cpupower_startup_script_filename }}
+{# >/dev/null 2>&1 #}
+Type=oneshot
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

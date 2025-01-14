@@ -1,0 +1,8 @@
+#!/bin/sh
+#
+# Start-up script that sets the desired cpufreq options which control
+# the CPU's power saving features
+#
+# {{ ansible_managed }}
+#
+{{ cpupower_bin }} frequency-set --governor {{ cpupower_governor }}
