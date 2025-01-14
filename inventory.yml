@@ -2,9 +2,8 @@ testcase:
   hosts:
     3.64.213.205:
       ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
-      ansible_ssh_user: ubuntu
-      ansible_ssh_private_key_file: ./test_vm.pem 
-      disk_to_encrypt_name: /dev/xvdf
-      partition_to_encrypt_name: /dev/xvda14
-      new_interface_name: net0
-      cpu_performance_mode: performance         # CPU mode to set
+      ansible_ssh_user: ubuntu # username to connect to the host
+      ansible_ssh_private_key_file: ./test_vm.pem # ssh public key to connect to the host
+      disk_to_encrypt_name: /dev/xvdf # device name to encrypt
+      new_interface_name: net0 # new eth interface name
+      cpu_performance_mode: performance # CPU mode to setup
