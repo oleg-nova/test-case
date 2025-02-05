@@ -40,5 +40,6 @@ v0.2 2025.01.14
   1. Used [community.crypto.luks_device module](https://docs.ansible.com/ansible/latest/collections/community/crypto/luks_device_module.html) for disk_encrypting role
   1. Added switching_cpu_mode role
   1. Lint playbook via ansible-lint and made fixes according ansible-lint results
+     
 v0.1 2024.12.31
   Initial Release
